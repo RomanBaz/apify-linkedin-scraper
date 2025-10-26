@@ -1,0 +1,42 @@
+{
+  "title": "LinkedIn Job Scraper Input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "startUrls": {
+      "title": "LinkedIn Job URLs",
+      "type": "array",
+      "description": "LinkedIn job search URLs to scrape (e.g., https://www.linkedin.com/jobs/search/?keywords=developer)",
+      "editor": "requestListSources",
+      "prefill": [
+        {
+          "url": "https://www.linkedin.com/jobs/search/?keywords=software%20developer"
+        }
+      ]
+    },
+    "maxResults": {
+      "title": "Maximum Results",
+      "type": "integer",
+      "description": "Maximum number of job listings to extract (0 = unlimited)",
+      "default": 50,
+      "minimum": 0,
+      "maximum": 200
+    },
+    "slowMode": {
+      "title": "Slow Mode (Safer)",
+      "type": "boolean",
+      "description": "Enable extra slow mode for maximum safety (reduces detection risk)",
+      "default": true
+    },
+    "proxyConfiguration": {
+      "title": "Proxy Configuration",
+      "type": "object",
+      "description": "Proxy settings for anti-bot protection",
+      "editor": "proxy",
+      "default": {
+        "useApifyProxy": true
+      }
+    }
+  },
+  "required": ["startUrls"]
+}
