@@ -85,8 +85,27 @@ router.addDefaultHandler(async ({ page, log, input }) => {
     );
   } else {
     log.warning(
-      "❌ No job listings found - LinkedIn may require authentication",
+      "❌ No job listings found - LinkedIn may require authentication or URL format changed",
     );
+
+    // Debug: Log page structure to help diagnose issues
+    const pageStructure = await page.evaluate(() => {
+      return {
+        title: document.title,
+        url: window.location.href,
+        hasJobCards:
+          document.querySelectorAll(
+            "[data-occludable-job-id], .job-card, .base-card",
+          ).length > 0,
+        bodyText:
+          document.body?.textContent?.substring(0, 500) || "No body content",
+      };
+    });
+    log.info(
+      `🔍 Debug: Page structure - Title: "${pageStructure.title}", Cards found: ${pageStructure.hasJobCards}`,
+    );
+    log.info(`🔍 Debug: Page URL: ${pageStructure.url}`);
+    log.info(`🔍 Debug: Page preview: ${pageStructure.bodyText}`);
   }
 
   // Random delay before closing
