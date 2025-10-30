@@ -49,3 +49,8 @@ storage/
 # Package manager lock files (keep package-lock.json but ignore others)
 yarn.lock
 pnpm-lock.yaml
+
+# Added by Apify CLI
+storage
+node_modules
+.venv

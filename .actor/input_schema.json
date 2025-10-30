@@ -28,6 +28,12 @@
       "description": "Enable extra slow mode for maximum safety (reduces detection risk)",
       "default": true
     },
+    "includeCompanyUrl": {
+      "title": "Include Company LinkedIn URL",
+      "type": "boolean",
+      "description": "Extract the LinkedIn company page URL for each job posting",
+      "default": false
+    },
     "proxyConfiguration": {
       "title": "Proxy Configuration",
       "type": "object",

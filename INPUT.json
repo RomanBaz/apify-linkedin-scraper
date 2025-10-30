@@ -1,0 +1,9 @@
+{
+  "startUrls": [
+    {
+      "url": "https://www.linkedin.com/jobs/net-jobs?keywords=Net&location=United%20States&geoId=103644278&f_TPR=r604800&position=1&pageNum=0"
+    }
+  ],
+  "slowMode": true,
+  "maxResults": 10
+}

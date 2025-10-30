@@ -18,7 +18,12 @@ import { router } from "./routes.js";
 // Initialize the Apify SDK
 await Actor.init();
 
-const { startUrls, slowMode = true } = (await Actor.getInput()) ?? {};
+const {
+  startUrls,
+  slowMode = true,
+  includeCompanyUrl = false,
+  maxResults = 50,
+} = (await Actor.getInput()) ?? {};
 
 if (!startUrls || startUrls.length === 0) {
   throw new Error(
@@ -37,7 +42,11 @@ const proxyConfiguration = await Actor.createProxyConfiguration();
 
 const crawler = new PlaywrightCrawler({
   proxyConfiguration,
-  requestHandler: router,
+  requestHandler: (context) => {
+    // Pass the full input to the router
+    context.input = { startUrls, slowMode, includeCompanyUrl, maxResults };
+    return router(context);
+  },
   launchContext: {
     launcher: firefox,
     launchOptions: await camoufoxLaunchOptions({
@@ -58,11 +67,9 @@ const crawler = new PlaywrightCrawler({
       excludeSwitches: ["enable-automation"],
       ignoreDefaultArgs: ["--enable-blink-features=AutomationControlled"],
     }),
-    // Use persistent context for cookies
-    usePersistentContext: true,
   },
-  maxRequestRetries: 2,
-  requestHandlerTimeoutSecs: 120,
+  maxRequestRetries: 1,
+  requestHandlerTimeoutSecs: 60,
   // Human-like navigation
   navigationTimeoutSecs: 60,
   // Rate limiting - very conservative for LinkedIn
