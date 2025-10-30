@@ -47,37 +47,3 @@
   },
   "required": ["startUrls"]
 }
-      ]
-    },
-    "maxResults": {
-      "title": "Maximum Results",
-      "type": "integer",
-      "description": "Maximum number of job listings to extract (0 = unlimited)",
-      "default": 50,
-      "minimum": 0,
-      "maximum": 200
-    },
-    "slowMode": {
-      "title": "Slow Mode (Safer)",
-      "type": "boolean",
-      "description": "Enable extra slow mode for maximum safety (reduces detection risk)",
-      "default": true
-    },
-    "includeCompanyUrl": {
-      "title": "Include Company LinkedIn URL",
-      "type": "boolean",
-      "description": "Extract the LinkedIn company page URL for each job posting",
-      "default": false
-    },
-    "proxyConfiguration": {
-      "title": "Proxy Configuration",
-      "type": "object",
-      "description": "Proxy settings for anti-bot protection",
-      "editor": "proxy",
-      "default": {
-        "useApifyProxy": true
-      }
-    }
-  },
-  "required": ["startUrls"]
-}
