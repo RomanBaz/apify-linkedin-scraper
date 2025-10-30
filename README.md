@@ -1,70 +1,90 @@
-## PlaywrightCrawler + Camoufox template
+# LinkedIn Job Scraper with Company URLs
 
-<!-- This is an Apify template readme -->
+A powerful Apify Actor that scrapes LinkedIn job listings with comprehensive company URL extraction. Built with PlaywrightCrawler and Camoufox for advanced anti-detection capabilities.
 
-This template is a production-ready boilerplate for developing an [Actor](https://apify.com/actors) with `PlaywrightCrawler`. It has [Camoufox](https://github.com/daijro/camoufox) - a stealthy fork of Firefox - preinstalled. Note that Camoufox might consume more resources than the default Playwright-bundled Chromium or Firefox.
+## Features
 
-Use this template to bootstrap your projects using the most up-to-date code.
+- 🔍 **Comprehensive Job Extraction**: Extracts job titles, companies, locations, posting dates, and URLs
+- 🏢 **Company URL Extraction**: Automatically finds LinkedIn company page URLs for each job posting
+- 🛡️ **Anti-Detection Technology**: Uses Camoufox (stealth Firefox) with randomized fingerprints
+- 🎯 **Smart Selectors**: 20+ fallback selectors handle LinkedIn's changing UI layouts
+- 🔄 **Retry Logic**: Automatic retries with progressive delays for failed extractions
+- 📊 **Configurable Safety**: Slow mode option for maximum stealth
+- 🌐 **Proxy Support**: Built-in proxy configuration for anti-bot protection
 
-> We decided to split Apify SDK into two libraries, Crawlee and Apify SDK v3. Crawlee will retain all the crawling and scraping-related tools and will always strive to be the best [web scraping](https://apify.com/web-scraping) library for its community. At the same time, Apify SDK will continue to exist, but keep only the Apify-specific features related to building Actors on the Apify platform. Read the upgrading guide to learn about the changes.
+## Output
+
+Each job listing includes:
+
+```json
+{
+  "id": "job_0",
+  "title": "Senior Software Engineer",
+  "company": "Tech Corp",
+  "location": "San Francisco, CA",
+  "postedDate": "2 days ago",
+  "url": "https://www.linkedin.com/jobs/view/...",
+  "companyUrl": "https://www.linkedin.com/company/tech-corp",
+  "scrapedAt": "2025-10-30T20:53:02.858Z"
+}
+```
+
+## Input Configuration
+
+### Required
+
+- **startUrls**: LinkedIn job search URLs to scrape
+
+### Optional
+
+- **maxResults**: Maximum number of jobs to extract (default: 50, max: 200)
+- **slowMode**: Enable extra conservative mode for safety (default: true)
+- **includeCompanyUrl**: Extract company LinkedIn URLs (default: true, recommended)
+- **proxyConfiguration**: Proxy settings for anti-bot protection
+
+## Technology Stack
+
+- **PlaywrightCrawler**: Advanced web scraping with Playwright
+- **Camoufox**: Stealth Firefox fork for anti-detection
+- **Crawlee**: Modern scraping framework
+- **Apify SDK**: Platform integration and data storage
+
+## Usage
+
+### Basic Usage
+
+```javascript
+const input = {
+  startUrls: [
+    "https://www.linkedin.com/jobs/search/?keywords=software%20developer",
+  ],
+  maxResults: 100,
+  includeCompanyUrl: true,
+  slowMode: true,
+};
+```
+
+### Advanced Usage
+
+For company research and recruitment analysis, enable `includeCompanyUrl: true` to get direct links to company LinkedIn pages alongside job postings.
+
+## Development
+
+This Actor is built with:
+
+- **ESM modules** for modern JavaScript development
+- **ESLint + Prettier** for code quality
+- **Apify SDK v3** for platform integration
+- **Crawlee** for robust web scraping
 
 ## Resources
 
-If you're looking for examples or want to learn more visit:
-
 - [Crawlee + Apify Platform guide](https://crawlee.dev/docs/guides/apify-platform)
-- [Documentation](https://crawlee.dev/api/playwright-crawler/class/PlaywrightCrawler) and [examples](https://crawlee.dev/docs/examples/playwright-crawler)
-- [Node.js tutorials](https://docs.apify.com/academy/node-js) in Academy
-- [Scraping single-page applications with Playwright](https://blog.apify.com/scraping-single-page-applications-with-playwright/)
-- [How to scale Puppeteer and Playwright](https://blog.apify.com/how-to-scale-puppeteer-and-playwright/)
-- [Integration with Zapier](https://apify.com/integrations), Make, GitHub, Google Drive and other apps
-- [Video guide on getting data using Apify API](https://www.youtube.com/watch?v=ViYYDHSBAKM)
-- A short guide on how to create Actors using code templates:
-
-[web scraper template](https://www.youtube.com/watch?v=u-i-Korzf8w)
-
-## Getting started
-
-For complete information [see this article](https://docs.apify.com/platform/actors/development#build-actor-at-apify-console). In short, you will:
-
-1. Build the Actor
-2. Run the Actor
-
-## Pull the Actor for local development
-
-If you would like to develop locally, you can pull the existing Actor from Apify console using Apify CLI:
-
-1. Install `apify-cli`
-
-   **Using Homebrew**
-
-   ```bash
-   brew install apify-cli
-   ```
-
-   **Using NPM**
-
-   ```bash
-   npm -g install apify-cli
-   ```
-
-2. Pull the Actor by its unique `<ActorId>`, which is one of the following:
-   - unique name of the Actor to pull (e.g. "apify/hello-world")
-   - or ID of the Actor to pull (e.g. "E2jjCZBezvAZnX8Rb")
-
-   You can find both by clicking on the Actor title at the top of the page, which will open a modal containing both Actor unique name and Actor ID.
-
-   This command will copy the Actor into the current directory on your local machine.
-
-   ```bash
-   apify pull <ActorId>
-   ```
-
-## Documentation reference
-
-To learn more about Apify and Actors, take a look at the following resources:
-
-- [Apify SDK for JavaScript documentation](https://docs.apify.com/sdk/js)
-- [Apify SDK for Python documentation](https://docs.apify.com/sdk/python)
+- [Documentation](https://crawlee.dev/api/playwright-crawler/class/PlaywrightCrawler)
+- [Node.js tutorials](https://docs.apify.com/academy/node-js)
 - [Apify Platform documentation](https://docs.apify.com/platform)
 - [Join our developer community on Discord](https://discord.com/invite/jyEM2PRvMU)
+
+## License
+
+ISC License - feel free to use this code for your projects!

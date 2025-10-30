@@ -1,7 +1,12 @@
 {
   "actorSpecification": 1,
-  "name": "apfy-link",
-  "version": "0.3",
+  "name": "linkedin-job-scraper-with-company-urls",
+  "version": "0.4",
   "buildTag": "latest",
-  "environmentVariables": {}
+  "environmentVariables": {},
+  "title": "LinkedIn Job Scraper with Company URLs",
+  "description": "Advanced LinkedIn job scraper that extracts job listings with company LinkedIn URLs. Features anti-detection, comprehensive selectors, and retry logic for maximum coverage.",
+  "meta": {
+    "templateName": "playwright-crawler-javascript-camoufox"
+  }
 }

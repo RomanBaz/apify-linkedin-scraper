@@ -1,8 +1,8 @@
 {
-  "name": "crawlee-playwright-javascript-camoufox",
-  "version": "0.3.0",
+  "name": "linkedin-job-scraper-with-company-urls",
+  "version": "0.4.0",
   "type": "module",
-  "description": "This is an example of an Apify Actor.",
+  "description": "Advanced LinkedIn job scraper that extracts job listings with company LinkedIn URLs using anti-detection technology.",
   "engines": {
     "node": ">=20.0.0"
   },
