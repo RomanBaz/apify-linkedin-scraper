@@ -2,6 +2,41 @@ import { createPlaywrightRouter, Dataset } from "crawlee";
 
 export const router = createPlaywrightRouter();
 
+// Helper function to validate company URLs
+function isValidCompanyUrl(url) {
+  if (!url || typeof url !== "string") return false;
+
+  // Must be a LinkedIn company URL
+  if (!url.includes("linkedin.com/company/")) return false;
+
+  // Exclude job, post, and people URLs
+  if (
+    url.includes("/jobs/") ||
+    url.includes("/posts/") ||
+    url.includes("/people/")
+  )
+    return false;
+
+  // Exclude search and filter URLs
+  if (url.includes("?") && (url.includes("f_C=") || url.includes("f_T=")))
+    return false;
+
+  return true;
+}
+
+// Helper function to clean company URLs
+function cleanCompanyUrl(url) {
+  if (!url) return "";
+
+  // Remove query parameters and fragments
+  let cleanUrl = url.split("?")[0].split("#")[0];
+
+  // Remove trailing slashes
+  cleanUrl = cleanUrl.replace(/\/+$/, "");
+
+  return cleanUrl;
+}
+
 router.addDefaultHandler(async ({ page, log, input }) => {
   const includeCompanyUrl = input?.includeCompanyUrl || false;
   const maxResults = input?.maxResults || 50;
@@ -177,42 +212,78 @@ async function extractJobListings(page, _includeCompanyUrl, _maxResults) {
           // Extract company LinkedIn URL if requested
           let companyUrl = "";
           if (includeCompanyUrl) {
-            // Try multiple approaches to find company LinkedIn URL
-            const companyLinkElement =
-              card.querySelector(".hidden-nested-link") ||
-              card.querySelector(".job-search-card__subtitle-link") ||
-              card.querySelector("a[href*='/company/']") ||
-              card.querySelector("a[aria-label*='company']") ||
-              card.querySelector("a[data-field='experience-company-logo']") ||
-              companyElement?.querySelector("a") ||
-              card.querySelector("span[class*='company'] a") ||
-              card.querySelector("div[class*='company'] a") ||
-              card.querySelector(".base-card__subtitle a") ||
-              card.querySelector(".job-card-container__company-name a") ||
-              card.querySelector(".job-card-company-name a");
+            // Enhanced selectors for company links in job cards
+            const companySelectors = [
+              // Primary selectors for company name links
+              ".hidden-nested-link",
+              ".job-search-card__subtitle-link",
+              ".job-card-container__company-name a",
+              ".job-card-company-name a",
+              ".base-card__subtitle a",
 
-            if (companyLinkElement?.href) {
-              companyUrl = companyLinkElement.href;
-              // Ensure it's a LinkedIn company URL and clean it
-              if (companyUrl.includes("linkedin.com/company/")) {
-                companyUrl = companyUrl.split("?")[0]; // Remove query parameters
-              } else {
-                companyUrl = "";
+              // Company logo links
+              "a[data-field='experience-company-logo']",
+              "[data-test-id*='company-logo'] a",
+              "[data-test-id*='company-name'] a",
+
+              // New LinkedIn layout selectors
+              ".job-creator-module a",
+              ".company-details-link",
+              ".top-card-layout__card a[href*='/company/']",
+
+              // Generic company link selectors
+              "a[href*='/company/']",
+              "a[aria-label*='company']",
+              "a[aria-label*='Company']",
+
+              // Fallback selectors
+              companyElement?.querySelector("a"),
+              "span[class*='company'] a",
+              "div[class*='company'] a",
+              "span[class*='Company'] a",
+              "div[class*='Company'] a",
+            ];
+
+            // Try each selector to find company link
+            for (const selector of companySelectors) {
+              try {
+                const element = card.querySelector(selector);
+                if (element?.href) {
+                  const { href } = element;
+                  // Validate and clean the company URL
+                  if (isValidCompanyUrl(href)) {
+                    companyUrl = cleanCompanyUrl(href);
+                    break;
+                  }
+                }
+              } catch {
+                // Continue with next selector on error
               }
             }
 
-            // Additional approach: look for any link that contains company name
+            // Additional approach: search all links in the card
             if (!companyUrl) {
               const allLinks = card.querySelectorAll("a");
               for (const link of allLinks) {
-                if (
-                  link.href &&
-                  link.href.includes("linkedin.com/company/") &&
-                  !link.href.includes("/jobs/") &&
-                  !link.href.includes("/posts/")
-                ) {
-                  companyUrl = link.href.split("?")[0];
+                if (link.href && isValidCompanyUrl(link.href)) {
+                  companyUrl = cleanCompanyUrl(link.href);
                   break;
+                }
+              }
+            }
+
+            // Last resort: look for company name and find nearby links
+            if (!companyUrl && companyElement) {
+              const companyText = companyElement.textContent?.trim();
+              if (companyText) {
+                const { parentElement } = companyElement;
+                if (parentElement) {
+                  const nearbyLink = parentElement.querySelector(
+                    "a[href*='/company/']",
+                  );
+                  if (nearbyLink?.href && isValidCompanyUrl(nearbyLink.href)) {
+                    companyUrl = cleanCompanyUrl(nearbyLink.href);
+                  }
                 }
               }
             }
@@ -262,13 +333,15 @@ async function extractJobListings(page, _includeCompanyUrl, _maxResults) {
 }
 
 async function extractCompanyUrlsFromJobPages(jobs, page, log) {
-  const maxJobsToProcess = Math.min(jobs.length, 10); // Process up to 10 jobs
-  log.info(`🔍 Extracting company URLs from ${maxJobsToProcess} job pages...`);
+  // Process all jobs that don't have company URLs yet
+  const jobsNeedingUrls = jobs.filter((job) => !job.companyUrl && job.url);
+  log.info(
+    `🔍 Extracting company URLs from ${jobsNeedingUrls.length} job pages...`,
+  );
   log.info(`🔍 Debug: Total jobs available: ${jobs.length}`);
-  log.info(`🔍 Debug: First job sample: ${JSON.stringify(jobs[0], null, 2)}`);
 
-  for (let i = 0; i < maxJobsToProcess; i++) {
-    const job = jobs[i];
+  for (let i = 0; i < jobsNeedingUrls.length; i++) {
+    const job = jobsNeedingUrls[i];
     if (!job.url) {
       log.warning(`⚠️  No URL for job: ${job.title}`);
       continue;
@@ -276,7 +349,7 @@ async function extractCompanyUrlsFromJobPages(jobs, page, log) {
 
     try {
       log.info(
-        `📄 Visiting job page ${i + 1}/${maxJobsToProcess}: ${job.title}`,
+        `📄 Visiting job page ${i + 1}/${jobsNeedingUrls.length}: ${job.title}`,
       );
 
       // Navigate to job page
@@ -289,7 +362,9 @@ async function extractCompanyUrlsFromJobPages(jobs, page, log) {
       // Extract company URL from job detail page
       const companyUrl = await page.evaluate(() => {
         // Debug: Log page title and URL
+        // eslint-disable-next-line no-console
         console.log("Debug: Page title:", document.title);
+        // eslint-disable-next-line no-console
         console.log("Debug: Page URL:", window.location.href);
 
         // Comprehensive selectors for company links
@@ -314,16 +389,19 @@ async function extractCompanyUrlsFromJobPages(jobs, page, log) {
           'a[href*="linkedin.com/company/"]',
         ];
 
+        // eslint-disable-next-line no-console
         console.log("Debug: Trying selectors...");
 
         // Try each selector
         for (const selector of selectors) {
           const elements = document.querySelectorAll(selector);
+          // eslint-disable-next-line no-console
           console.log(
             `Debug: Selector "${selector}" found ${elements.length} elements`,
           );
 
           for (const element of elements) {
+            // eslint-disable-next-line no-console
             console.log(`Debug: Element href: ${element.href}`);
             if (
               element &&
@@ -333,6 +411,7 @@ async function extractCompanyUrlsFromJobPages(jobs, page, log) {
               !element.href.includes("/posts/") &&
               !element.href.includes("/people/")
             ) {
+              // eslint-disable-next-line no-console
               console.log(`Debug: Found valid company URL: ${element.href}`);
               return element.href.split("?")[0]; // Remove query parameters
             }
@@ -341,13 +420,16 @@ async function extractCompanyUrlsFromJobPages(jobs, page, log) {
 
         // Debug: Look for any links on the page
         const allLinks = document.querySelectorAll("a");
+        // eslint-disable-next-line no-console
         console.log(`Debug: Total links found: ${allLinks.length}`);
         const companyLinks = Array.from(allLinks).filter(
           (link) => link.href && link.href.includes("linkedin.com/company/"),
         );
+        // eslint-disable-next-line no-console
         console.log(`Debug: Company links found: ${companyLinks.length}`);
-        companyLinks.forEach((link, i) => {
-          console.log(`Debug: Company link ${i}: ${link.href}`);
+        companyLinks.forEach((link, index) => {
+          // eslint-disable-next-line no-console
+          console.log(`Debug: Company link ${index}: ${link.href}`);
         });
 
         // Last resort: look for any company-related text and find nearby links
@@ -363,6 +445,7 @@ async function extractCompanyUrlsFromJobPages(jobs, page, log) {
               nearbyLink &&
               nearbyLink.href.includes("linkedin.com/company/")
             ) {
+              // eslint-disable-next-line no-console
               console.log(
                 `Debug: Found company link via text search: ${nearbyLink.href}`,
               );
@@ -371,6 +454,7 @@ async function extractCompanyUrlsFromJobPages(jobs, page, log) {
           }
         }
 
+        // eslint-disable-next-line no-console
         console.log("Debug: No company URL found");
         return "";
       });
@@ -393,6 +477,6 @@ async function extractCompanyUrlsFromJobPages(jobs, page, log) {
 
   const withCompanyUrls = jobs.filter((job) => job.companyUrl).length;
   log.info(
-    `📊 Company URL extraction complete: ${withCompanyUrls}/${maxJobsToProcess} jobs have company URLs`,
+    `📊 Company URL extraction complete: ${withCompanyUrls}/${jobs.length} jobs have company URLs`,
   );
 }
