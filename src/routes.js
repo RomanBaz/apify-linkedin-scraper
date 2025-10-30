@@ -142,7 +142,7 @@ async function extractJobListings(page, _includeCompanyUrl, _maxResults) {
     ({ includeCompanyUrl, maxResults }) => {
       const jobs = [];
 
-      // Try multiple LinkedIn job card selectors
+      // Try multiple LinkedIn job card selectors (updated for 2024/2025 layout)
       const selectors = [
         "[data-occludable-job-id]",
         ".jobs-search__results-list .job-card-container",
@@ -150,6 +150,18 @@ async function extractJobListings(page, _includeCompanyUrl, _maxResults) {
         "[data-job-id]",
         ".base-card",
         ".job-card-list__title",
+        // New 2024/2025 LinkedIn selectors
+        ".jobs-search-results-list .job-card-container",
+        ".job-search-card__contents",
+        "[data-test-id*='job-card']",
+        ".job-search-card__contents-wrapper",
+        ".base-search-card",
+        ".jobs-search-two-pane__job-card-container",
+        ".job-card-container",
+        ".job-card",
+        // Fallback - any element with job data
+        "[data-occludable-entity-urn]",
+        "[data-control-name='job_card']",
       ];
 
       let jobCards = [];
@@ -159,6 +171,9 @@ async function extractJobListings(page, _includeCompanyUrl, _maxResults) {
       }
 
       // Found job cards with selector
+      log.info(
+        `🔍 Debug: Found ${jobCards.length} job cards with selector: ${selectors.find((s) => document.querySelectorAll(s).length > 0) || "none"}`,
+      );
 
       jobCards.forEach((card, index) => {
         // Stop if we've reached maxResults
@@ -171,7 +186,7 @@ async function extractJobListings(page, _includeCompanyUrl, _maxResults) {
             card.getAttribute("data-job-id") ||
             `job_${index}`;
 
-          // Try multiple title selectors
+          // Try multiple title selectors (updated for 2024/2025)
           const titleElement =
             card.querySelector(".base-card__full-link") ||
             card.querySelector("h3 a") ||
@@ -179,35 +194,51 @@ async function extractJobListings(page, _includeCompanyUrl, _maxResults) {
             card.querySelector(".job-search-card__title") ||
             card.querySelector("a[data-control-name]") ||
             card.querySelector("h3") ||
-            card.querySelector("a");
+            card.querySelector("a") ||
+            card.querySelector(".job-card-container__link") ||
+            card.querySelector(".base-search-card__title") ||
+            card.querySelector("[data-test-id*='job-title']");
 
-          // Try multiple company selectors
+          // Try multiple company selectors (updated for 2024/2025)
           const companyElement =
             card.querySelector(".hidden-nested-link") ||
             card.querySelector(".job-search-card__subtitle-link") ||
             card.querySelector(".job-card-container__company-name") ||
             card.querySelector(".job-card-company-name") ||
-            card.querySelector("[data-field='experience-company-logo'] + span");
+            card.querySelector(
+              "[data-field='experience-company-logo'] + span",
+            ) ||
+            card.querySelector(".job-card-container__company-name a") ||
+            card.querySelector(".base-search-card__subtitle") ||
+            card.querySelector("[data-test-id*='company-name']");
 
-          // Try multiple location selectors
+          // Try multiple location selectors (updated for 2024/2025)
           const locationElement =
             card.querySelector(".job-search-card__location") ||
             card.querySelector(".job-result-card__location") ||
             card.querySelector(".job-card-container__metadata-item") ||
-            card.querySelector(".job-card-location");
+            card.querySelector(".job-card-location") ||
+            card.querySelector(".job-card-container__metadata-item") ||
+            card.querySelector(".base-search-card__location") ||
+            card.querySelector("[data-test-id*='location']");
 
-          // Try multiple date selectors
+          // Try multiple date selectors (updated for 2024/2025)
           const postedDateElement =
             card.querySelector(".job-search-card__listdate") ||
             card.querySelector("time") ||
-            card.querySelector(".job-card-container__footer-job-time");
+            card.querySelector(".job-card-container__footer-job-time") ||
+            card.querySelector(".job-card-container__time-posted") ||
+            card.querySelector("[data-test-id*='posted-date']");
 
-          // Try multiple link selectors
+          // Try multiple link selectors (updated for 2024/2025)
           const linkElement =
             card.querySelector(".base-card__full-link") ||
             card.querySelector("h3 a") ||
             card.querySelector("a[data-control-name]") ||
-            card.querySelector("a");
+            card.querySelector("a") ||
+            card.querySelector(".job-card-container__link") ||
+            card.querySelector(".base-search-card__title") ||
+            card.querySelector("[data-test-id*='job-title'] a");
 
           // Extract company LinkedIn URL if requested
           let companyUrl = "";
@@ -292,14 +323,13 @@ async function extractJobListings(page, _includeCompanyUrl, _maxResults) {
           const title = titleElement?.textContent?.trim() || "";
           const company = companyElement?.textContent?.trim() || "";
 
-          if (
-            title &&
-            (title.toLowerCase().includes("developer") ||
-              title.toLowerCase().includes("engineer") ||
-              title.toLowerCase().includes("manager") ||
-              title.toLowerCase().includes("analyst") ||
-              title.toLowerCase().includes("specialist"))
-          ) {
+          // Debug logging for job filtering
+          log.info(
+            `🔍 Debug: Job found - Title: "${title}", Company: "${company}"`,
+          );
+
+          // Temporarily remove title filtering to test extraction
+          if (title) {
             const job = {
               id: jobId,
               title,
